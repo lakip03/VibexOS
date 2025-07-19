@@ -1,100 +1,137 @@
 # VibexOS 🌀
-*An AI-prompted operating system built from scratch — no code written by hand.*
+
+*An experimental operating system built entirely through AI prompt engineering.*
 
 ## 🧪 What is VibexOS?
-VibexOS is a 14-day experiment to push the limits of AI-assisted software development by building an operating system entirely through **prompt engineering**.  
-No code was written by hand — every function, memory layout, and assembly instruction was generated through large language models like **ChatGPT** and **Claude** using carefully crafted prompts.
+
+VibexOS is an ambitious experiment to build an operating system from scratch using only AI-generated code. Every line of assembly, C code, and system configuration was created through carefully crafted prompts to large language models like **ChatGPT** and **Claude**.
 
 This project explores:
-- Whether AI can write **low-level systems code** reliably
-- How far **prompt engineering** can take you in an unforgiving domain
-- What it really means to “vibecode” something as complex as an OS
+- Whether AI can handle **low-level systems programming** reliably
+- The limits and potential of **prompt engineering** in complex domains
+- What it means to "AI-code" something as foundational as an operating system
 
-> ⚠️ This is *not* a tutorial. This is a real-time, documented journey — with all the bugs, breakthroughs, and AI quirks that come with it.
+> ⚠️ **Experimental Project**: This is a real-time development experiment with all the successes, failures, and AI quirks documented.
+
+## 🎯 Project Goals
+
+**Objective**: Create a minimal but functional operating system featuring:
+- Custom x86_64 bootloader (NASM assembly)
+- Monolithic kernel in C
+- Command-line shell with text editor
+- RAM-based filesystem (no disk I/O)
+- QEMU virtualization support
+
+**Constraints**:
+- Zero human-written code
+- No external frameworks or libraries
+- AI-generated assembly and C only
 
 ## 🧱 Project Structure
 
 ```
-/src         → All source code (AI-generated only)
-  └── boot/  → NASM-based bootloader
-  └── kernel/→ Core OS code in pure C
-/dist        → Compiled OS image and binaries
-/docs        → AI prompts, responses, and crash logs
-README.md    → You're reading it
-Makefile     → Builds the .img using NASM and GCC
+VibexOS/
+├── src/
+│   ├── boot/           # NASM bootloader
+│   │   └── bootloader.asm
+│   ├── kernel/         # Core OS kernel
+│   │   └── kernel.c
+│   └── linker/         # Linker script
+│       └── linker.ld
+├── build/              # Temporary build files
+├── dist/               # Final OS image and binaries
+├── promt-history/      # AI prompt logs and iterations
+│   ├── genisis-promt.md
+│   └── kernel-1.md
+├── Makefile           # Build system
+└── README.md          # This file
 ```
 
-## 🎯 Challenge Goals
+## 🤖 AI Workflow
 
-**Timeframe:** 14 Days  
-**Scope:**
-- Custom bootloader in NASM
-- Monolithic x86_64 kernel
-- Command-line shell with built-in text editor
-- RAM-only filesystem (no disk I/O)
-- Fully virtualized in QEMU (CLI only, no GUI debuggers)
+The development process uses a multi-agent AI approach:
 
-**Constraints:**
-- Zero human-written code
-- No frameworks or libraries
-- Only AI-generated assembly & C
+### 👨‍🏫 "Jhon" - The Prompt Engineer (ChatGPT)
+Specialized persona that transforms high-level requirements into precise technical specifications:
+- Memory layout definitions
+- Assembly syntax constraints
+- Boot sector and ELF format requirements
+- Hardware interface specifications
 
-## 🤖 The AI Workflow
-
-To make this work, I created a multi-agent prompting setup:
-
-### 👨‍🏫 “Jhon” — The Prompt Engineer (ChatGPT)
-A custom ChatGPT persona who transforms vague ideas into **precise, technical prompts**, including:
-- Memory layouts, interrupt table specs
-- NASM/GCC syntax constraints
-- ELF format details and boot sector limits
-
-### 🧠 Claude — The Code Generator
-Receives Jhon's prompts and outputs code for:
-- Bootloaders
+### 🧠 Claude - The Code Generator
+Receives technical prompts and generates:
+- Bootloader assembly code
 - Kernel memory management
-- Shell input/output
-- File handling in RAM
+- Shell and I/O handling
+- Filesystem implementation
 
-## 📷 Demo
+## 🚀 Getting Started
 
-![bootloader screenshot](docs/boot_message.png)
+### Prerequisites
+- Linux environment (tested on EndevourOS)
+- NASM assembler
+- GCC compiler
+- QEMU emulator
+- Make build system
 
-> “I’m sorry Dave, I’m afraid I can’t let you do that.”  
-> — The first boot message from VibexOS, generated entirely by AI
+### Building VibexOS
 
-## 📚 Full Log on Medium
+```bash
+# Clone the repository
+git clone <repository-url>
+cd VibexOS
 
-This project is being written as a live journal on Medium:  
-📰 [**Read the series: “Testing the Limits of AI Vibecoding: Building an OS From Scratch”**](https://medium.com/@your-profile-link) *(replace with actual link)*
+# Build the OS image
+make
 
-You’ll find:
-- Daily logs of progress
-- Prompt iterations
-- Failures, restarts, and final breakthroughs
-- Lessons learned from real-world LLM prompting
+# Run in QEMU
+make run
+```
 
-## ✅ Success Criteria
+## 📈 Development Status
 
-By the end of Day 14, VibexOS should allow me to:
-- Boot from BIOS into a custom kernel
-- Drop into a command prompt
-- Create, edit, and read text files in memory
-- Navigate a simple RAM-based filesystem
+- [x] Basic bootloader
+- [x] Kernel foundation
+- [ ] Memory management
+- [ ] Shell implementation
+- [ ] Text editor
+- [ ] RAM filesystem
+- [ ] Command processing
 
-If I can type `edit hello.txt`, write content, save, and `cat` it — that's a win.
+## 📚 Documentation
 
-## 📎 License
-
-MIT License — all generated content, prompts, and tooling are free to fork, remix, and build on.  
-Just please **don’t remove attribution** if you're using this as a learning resource or base project.
+Development logs and prompt histories are maintained in the `promt-history/` directory:
+- **Genesis Prompt**: Initial system specifications
+- **Kernel Development**: Core kernel implementation phases
 
 ## 🧠 Why This Matters
 
-This isn’t about showing off what AI can do.  
-It’s about showing:
-- What *you* need to know to make AI work on hard problems  
-- Where AI falls short — and how human guidance fills in  
-- How modern tooling is redefining software creation itself
+This project demonstrates:
+- **AI Capabilities**: What modern LLMs can achieve in systems programming
+- **Prompt Engineering**: How to guide AI for complex technical tasks
+- **Development Process**: New paradigms for software creation
+- **Limitations**: Where AI needs human guidance and oversight
 
-> *Building an OS used to require arcane knowledge and weeks of pain. Now, it still kind of does — but at least now I have someone to blame.*
+## 🔬 Lessons Learned
+
+*This section will be updated as development progresses*
+
+- AI excels at generating boilerplate and standard patterns
+- Complex system interactions require careful prompt design
+- Debugging AI-generated code presents unique challenges
+- Domain expertise remains crucial for effective prompting
+
+## 📄 License
+
+MIT License - Feel free to fork, modify, and build upon this work. Attribution appreciated for educational use.
+
+## 🤝 Contributing
+
+While this is primarily an AI-assisted development experiment, feedback and suggestions for prompt improvements are welcome. Please open issues for:
+- Build problems
+- Documentation improvements
+- Prompt strategy suggestions
+
+---
+
+*"Building an OS used to require years of specialized knowledge. Now it requires years of specialized knowledge... and really good prompts."*
