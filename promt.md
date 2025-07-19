@@ -1,48 +1,50 @@
-You are tasked with writing a minimal custom bootloader in x86_64 Assembly, which:
+You’ve previously written a minimal OS bootloader and kernel (NASM + C), and placed all code inside /src/. Refactor the project to follow a modular, scalable directory structure as shown below:
+📁 Target Directory Structure
 
-    Does not use any external libraries or helper tools (e.g., no GRUB, no BIOS interrupts beyond standard).
+/vibexos/
+│
+├── Makefile                     # Updated Makefile reflecting new structure
+│
+├── /src/
+│   ├── /boot/                   # NASM bootloader
+│   │   └── bootloader.asm
+│   │
+│   ├── /kernel/                 # C kernel code
+│   │   └── kernel.c
+│   │
+│   └── /linker/                 # Linker script
+│       └── linker.ld
+│
+├── /build/                      # Object files, intermediate binaries
+│   ├── boot.o
+│   ├── kernel.o
+│   └── kernel.bin
+│
+├── /dist/                       # Final bootable image
+│   └── os.img
 
-    Must compile into a bootable .img file that can be run directly using QEMU in legacy BIOS mode (MBR, not UEFI).
+🧾 Instructions for the LLM
 
-    When loaded, it should display the message:
-    "I'm sorry Dave, I am afraid I can't let you do that"
+    Move files:
 
-    The bootloader must be architected to allow for future expansion (e.g., space left in sectors, modular structure).
+        Move bootloader.asm into /src/boot/
 
-📁 Project structure
+        Move kernel.c into /src/kernel/
 
-    /src/ → All source code (Assembly).
+        Move linker.ld into /src/linker/
 
-    /dist/ → Compiled output (.img file).
+    Refactor the Makefile:
 
-    /Makefile → Build logic.
+        Update all source paths to reflect the new structure.
 
-✅ Bootloader requirements
+        Create /build and /dist automatically if they don't exist.
 
-    Written in pure Assembly (NASM syntax preferred).
+        Compile assembly and C files into /build/*.o.
 
-    Loads at 0x7C00 (standard MBR bootloader entry point).
+        Link kernel to /build/kernel.bin.
 
-    Compiles into a flat binary (512 bytes total, with valid boot signature 0xAA55 at the end).
+        Concatenate bootloader + kernel binary into /dist/os.img.
 
-    Message printed using BIOS INT 0x10.
+    No code logic needs to change, just move and rewire the build paths.
 
-📦 Output
-
-    src/bootloader.asm → contains the bootloader.
-
-    dist/os.img → bootable image file.
-
-    Makefile → builds everything from root project directory.
-
-🧾 Deliverables (LLM Output Expected):
-
-    bootloader.asm file content (NASM syntax).
-
-    Makefile with instructions to build the .img.
-
-    Explanations of:
-
-        Key sections of Assembly (where it loads, how message is printed).
-
-        How it leaves room for future code (e.g., filling unused sector space).
+    Optional: Add short comments in Makefile to explain what each step does for readability.

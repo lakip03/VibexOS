@@ -1,46 +1,76 @@
-# Makefile for VibexOS Bootloader
-# Builds a minimal x86_64 bootloader
+# Makefile for VibexOS
+# Builds a minimal x86_64 bootloader and kernel
 
-# Assembler
+# Assembler and compiler
 ASM = nasm
 ASMFLAGS = -f bin
+CC = gcc
+CFLAGS = -m32 -ffreestanding -nostdlib -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-pic
+LD = ld
+LDFLAGS = -T $(LINKER_SCRIPT)
 
 # Source and output directories
 SRC_DIR = src
+BUILD_DIR = build
 DIST_DIR = dist
 
 # Files
-BOOTLOADER_SRC = $(SRC_DIR)/bootloader.asm
-BOOTLOADER_IMG = $(DIST_DIR)/os.img
+BOOTLOADER_SRC = $(SRC_DIR)/boot/bootloader.asm
+KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
+LINKER_SCRIPT = $(SRC_DIR)/linker/linker.ld
+BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
+KERNEL_OBJ = $(BUILD_DIR)/kernel.o
+KERNEL_BIN = $(BUILD_DIR)/kernel.bin
+OS_IMG = $(DIST_DIR)/os.img
 
 # Default target
-all: $(BOOTLOADER_IMG)
+all: $(OS_IMG)
 
-# Build the bootloader image
-$(BOOTLOADER_IMG): $(BOOTLOADER_SRC) | $(DIST_DIR)
-	$(ASM) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_IMG)
-	@echo "Bootloader built successfully: $(BOOTLOADER_IMG)"
+# Build the bootable OS image
+$(OS_IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN) | $(DIST_DIR)
+	cat $(BOOTLOADER_BIN) > $(OS_IMG)
+	dd if=$(KERNEL_BIN) of=$(OS_IMG) bs=512 seek=1 conv=notrunc 2>/dev/null
+	truncate -s 1440K $(OS_IMG)
+	@echo "OS image built successfully: $(OS_IMG)"
 
-# Ensure dist directory exists
+# Build the bootloader binary
+$(BOOTLOADER_BIN): $(BOOTLOADER_SRC) | $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
+	@echo "Bootloader built successfully: $(BOOTLOADER_BIN)"
+
+# Compile kernel object file
+$(KERNEL_OBJ): $(KERNEL_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(KERNEL_SRC) -o $(KERNEL_OBJ)
+	@echo "Kernel object compiled: $(KERNEL_OBJ)"
+
+# Link kernel binary
+$(KERNEL_BIN): $(KERNEL_OBJ) $(LINKER_SCRIPT) | $(BUILD_DIR)
+	$(LD) $(LDFLAGS) $(KERNEL_OBJ) -o $(KERNEL_BIN)
+	@echo "Kernel binary linked: $(KERNEL_BIN)"
+
+# Ensure build and dist directories exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
 $(DIST_DIR):
 	mkdir -p $(DIST_DIR)
 
 # Clean build artifacts
 clean:
-	rm -rf $(DIST_DIR)
+	rm -rf $(BUILD_DIR) $(DIST_DIR)
 	@echo "Cleaned build artifacts"
 
-# Run the bootloader in QEMU
-run: $(BOOTLOADER_IMG)
-	qemu-system-x86_64 -drive format=raw,file=$(BOOTLOADER_IMG) -boot c
+# Run the OS in QEMU
+run: $(OS_IMG)
+	qemu-system-x86_64 -drive format=raw,file=$(OS_IMG) -boot c
 
 # Run with legacy BIOS mode explicitly
-run-bios: $(BOOTLOADER_IMG)
-	qemu-system-x86_64 -drive format=raw,file=$(BOOTLOADER_IMG) -boot c -machine pc
+run-bios: $(OS_IMG)
+	qemu-system-x86_64 -drive format=raw,file=$(OS_IMG) -boot c -machine pc
 
 # Check if bootloader is exactly 512 bytes
-check-size: $(BOOTLOADER_IMG)
-	@SIZE=$$(stat -c%s $(BOOTLOADER_IMG)); \
+check-bootloader-size: $(BOOTLOADER_BIN)
+	@SIZE=$$(stat -c%s $(BOOTLOADER_BIN)); \
 	if [ $$SIZE -eq 512 ]; then \
 		echo "✓ Bootloader size is correct: $$SIZE bytes"; \
 	else \
@@ -49,8 +79,8 @@ check-size: $(BOOTLOADER_IMG)
 	fi
 
 # Verify boot signature
-check-signature: $(BOOTLOADER_IMG)
-	@SIGNATURE=$$(xxd -l 2 -s 510 $(BOOTLOADER_IMG) | awk '{print $$2}'); \
+check-signature: $(BOOTLOADER_BIN)
+	@SIGNATURE=$$(xxd -l 2 -s 510 $(BOOTLOADER_BIN) | awk '{print $$2}'); \
 	if [ "$$SIGNATURE" = "55aa" ]; then \
 		echo "✓ Boot signature is correct: 0xAA55"; \
 	else \
@@ -59,20 +89,23 @@ check-signature: $(BOOTLOADER_IMG)
 	fi
 
 # Verify the bootloader
-verify: check-size check-signature
+verify: check-bootloader-size check-signature
 	@echo "✓ Bootloader verification passed"
 
 # Show help
 help:
-	@echo "VibexOS Bootloader Build System"
+	@echo "VibexOS Build System"
 	@echo "Available targets:"
-	@echo "  all         - Build the bootloader (default)"
+	@echo "  all         - Build the OS image (default)"
 	@echo "  clean       - Remove build artifacts"
-	@echo "  run         - Run bootloader in QEMU"
-	@echo "  run-bios    - Run bootloader in QEMU with explicit BIOS mode"
-	@echo "  check-size  - Verify bootloader is exactly 512 bytes"
+	@echo "  run         - Run OS in QEMU"
+	@echo "  run-bios    - Run OS in QEMU with explicit BIOS mode"
+	@echo "  check-bootloader-size - Verify bootloader is exactly 512 bytes"
 	@echo "  check-signature - Verify boot signature (0xAA55)"
 	@echo "  verify      - Run all verification checks"
 	@echo "  help        - Show this help message"
 
-.PHONY: all clean run run-bios check-size check-signature verify help
+# Dependencies for proper rebuilding
+$(KERNEL_BIN): $(LINKER_SCRIPT)
+
+.PHONY: all clean run run-bios check-bootloader-size check-signature verify help
