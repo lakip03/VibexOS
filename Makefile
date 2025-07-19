@@ -14,11 +14,20 @@ SRC_DIR = src
 BUILD_DIR = build
 DIST_DIR = dist
 
-# Files
-BOOTLOADER_SRC = $(SRC_DIR)/boot/simple_bootloader.asm
-SIMPLE_KERNEL_SRC = $(SRC_DIR)/kernel/simple_kernel.asm
+# Files - Multi-stage Bootloader Edition
+STAGE1_SRC = $(SRC_DIR)/boot/stage1.asm
+STAGE2_SRC = $(SRC_DIR)/boot/stage2.asm
+KERNEL_ENTRY_SRC = $(SRC_DIR)/kernel/entry.asm
+KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
+PRINTF_SRC = $(SRC_DIR)/lib/printf.c
+SCREEN_SRC = $(SRC_DIR)/lib/screen.c
 KERNEL_LINKER_SCRIPT = $(SRC_DIR)/linker/linker.ld
-BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
+STAGE1_BIN = $(BUILD_DIR)/stage1.bin
+STAGE2_BIN = $(BUILD_DIR)/stage2.bin
+KERNEL_ENTRY_OBJ = $(BUILD_DIR)/entry.o
+KERNEL_OBJ = $(BUILD_DIR)/kernel.o
+PRINTF_OBJ = $(BUILD_DIR)/printf.o
+SCREEN_OBJ = $(BUILD_DIR)/screen.o
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 OS_IMG = $(DIST_DIR)/os.img
 
@@ -26,21 +35,47 @@ OS_IMG = $(DIST_DIR)/os.img
 all: $(OS_IMG)
 
 # Build the bootable OS image
-$(OS_IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN) | $(DIST_DIR)
-	cat $(BOOTLOADER_BIN) > $(OS_IMG)
-	dd if=$(KERNEL_BIN) of=$(OS_IMG) bs=512 seek=1 conv=notrunc 2>/dev/null
+$(OS_IMG): $(STAGE1_BIN) $(STAGE2_BIN) $(KERNEL_BIN) | $(DIST_DIR)
+	cat $(STAGE1_BIN) > $(OS_IMG)
+	dd if=$(STAGE2_BIN) of=$(OS_IMG) bs=512 seek=1 conv=notrunc 2>/dev/null
+	dd if=$(KERNEL_BIN) of=$(OS_IMG) bs=512 seek=9 conv=notrunc 2>/dev/null
 	truncate -s 1440K $(OS_IMG)
-	@echo "OS image built successfully: $(OS_IMG)"
+	@echo "Multi-stage OS image built successfully: $(OS_IMG)"
 
-# Build bootloader
-$(BOOTLOADER_BIN): $(BOOTLOADER_SRC) | $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
-	@echo "Bootloader built: $(BOOTLOADER_BIN)"
+# Build stage 1 bootloader
+$(STAGE1_BIN): $(STAGE1_SRC) | $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $(STAGE1_SRC) -o $(STAGE1_BIN)
+	@echo "Stage 1 bootloader built: $(STAGE1_BIN)"
 
-# Build simple kernel (pure assembly, no linking needed)
-$(KERNEL_BIN): $(SIMPLE_KERNEL_SRC) | $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) $(SIMPLE_KERNEL_SRC) -o $(KERNEL_BIN)
-	@echo "Simple kernel built: $(KERNEL_BIN)"
+# Build stage 2 bootloader
+$(STAGE2_BIN): $(STAGE2_SRC) | $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $(STAGE2_SRC) -o $(STAGE2_BIN)
+	@echo "Stage 2 bootloader built: $(STAGE2_BIN)"
+
+# Compile kernel entry assembly
+$(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_SRC) | $(BUILD_DIR)
+	$(ASM) -f elf32 $(KERNEL_ENTRY_SRC) -o $(KERNEL_ENTRY_OBJ)
+	@echo "Kernel entry assembly compiled: $(KERNEL_ENTRY_OBJ)"
+
+# Compile kernel C code
+$(KERNEL_OBJ): $(KERNEL_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(KERNEL_SRC) -o $(KERNEL_OBJ)
+	@echo "Kernel C code compiled: $(KERNEL_OBJ)"
+
+# Compile printf library
+$(PRINTF_OBJ): $(PRINTF_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(PRINTF_SRC) -o $(PRINTF_OBJ)
+	@echo "Printf library compiled: $(PRINTF_OBJ)"
+
+# Compile screen library
+$(SCREEN_OBJ): $(SCREEN_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(SCREEN_SRC) -o $(SCREEN_OBJ)
+	@echo "Screen library compiled: $(SCREEN_OBJ)"
+
+# Link kernel
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
+	$(LD) -T $(KERNEL_LINKER_SCRIPT) $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) -o $(KERNEL_BIN)
+	@echo "Kernel linked: $(KERNEL_BIN)"
 
 # Ensure build and dist directories exist
 $(BUILD_DIR):
@@ -62,19 +97,19 @@ run: $(OS_IMG)
 run-bios: $(OS_IMG)
 	qemu-system-x86_64 -drive format=raw,file=$(OS_IMG) -boot c -machine pc
 
-# Check if bootloader is exactly 512 bytes
-check-bootloader-size: $(BOOTLOADER_BIN)
-	@SIZE=$$(stat -c%s $(BOOTLOADER_BIN)); \
+# Check if stage 1 bootloader is exactly 512 bytes
+check-stage1-size: $(STAGE1_BIN)
+	@SIZE=$$(stat -c%s $(STAGE1_BIN)); \
 	if [ $$SIZE -eq 512 ]; then \
-		echo "✓ Bootloader size is correct: $$SIZE bytes"; \
+		echo "✓ Stage 1 bootloader size is correct: $$SIZE bytes"; \
 	else \
-		echo "✗ Bootloader size is incorrect: $$SIZE bytes (should be 512)"; \
+		echo "✗ Stage 1 bootloader size is incorrect: $$SIZE bytes (should be 512)"; \
 		exit 1; \
 	fi
 
 # Verify boot signature
-check-signature: $(BOOTLOADER_BIN)
-	@SIGNATURE=$$(xxd -l 2 -s 510 $(BOOTLOADER_BIN) | awk '{print $$2}'); \
+check-signature: $(STAGE1_BIN)
+	@SIGNATURE=$$(hexdump -s 510 -n 2 -e '/1 "%02x"' $(STAGE1_BIN)); \
 	if [ "$$SIGNATURE" = "55aa" ]; then \
 		echo "✓ Boot signature is correct: 0xAA55"; \
 	else \
@@ -83,8 +118,8 @@ check-signature: $(BOOTLOADER_BIN)
 	fi
 
 # Verify the bootloader
-verify: check-bootloader-size check-signature
-	@echo "✓ Bootloader verification passed"
+verify: check-stage1-size check-signature
+	@echo "✓ Multi-stage bootloader verification passed"
 
 # Show help
 help:

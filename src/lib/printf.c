@@ -4,8 +4,8 @@
 #define VGA_HEIGHT 25
 
 static volatile unsigned char *video_memory = (volatile unsigned char*)0xB8000;
-static int cursor_x = 0;
-static int cursor_y = 0;
+int cursor_x = 0;
+int cursor_y = 0;
 
 int strlen(const char *str) {
     int len = 0;
@@ -15,12 +15,30 @@ int strlen(const char *str) {
     return len;
 }
 
+void scroll_screen() {
+    for (int row = 0; row < VGA_HEIGHT - 1; row++) {
+        for (int col = 0; col < VGA_WIDTH; col++) {
+            int src_pos = (row + 1) * VGA_WIDTH + col;
+            int dst_pos = row * VGA_WIDTH + col;
+            video_memory[dst_pos * 2] = video_memory[src_pos * 2];
+            video_memory[dst_pos * 2 + 1] = video_memory[src_pos * 2 + 1];
+        }
+    }
+    
+    for (int col = 0; col < VGA_WIDTH; col++) {
+        int pos = (VGA_HEIGHT - 1) * VGA_WIDTH + col;
+        video_memory[pos * 2] = ' ';
+        video_memory[pos * 2 + 1] = 0x07;
+    }
+}
+
 void print_char(char c) {
     if (c == '\n') {
         cursor_x = 0;
         cursor_y++;
         if (cursor_y >= VGA_HEIGHT) {
-            cursor_y = 0;
+            scroll_screen();
+            cursor_y = VGA_HEIGHT - 1;
         }
         return;
     }
@@ -29,7 +47,8 @@ void print_char(char c) {
         cursor_x = 0;
         cursor_y++;
         if (cursor_y >= VGA_HEIGHT) {
-            cursor_y = 0;
+            scroll_screen();
+            cursor_y = VGA_HEIGHT - 1;
         }
     }
     
@@ -135,16 +154,17 @@ char *itoa(int value, char *buffer, int base) {
 }
 
 void printf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    
     const char *ptr = format;
-    unsigned int *args = (unsigned int*)&format + 1;
-    int arg_index = 0;
     
     while (*ptr) {
         if (*ptr == '%' && *(ptr + 1)) {
             ptr++;
             switch (*ptr) {
                 case 's': {
-                    char *str = (char*)args[arg_index++];
+                    char *str = va_arg(args, char*);
                     if (str) {
                         print_string(str);
                     } else {
@@ -153,14 +173,14 @@ void printf(const char *format, ...) {
                     break;
                 }
                 case 'c':
-                    print_char((char)args[arg_index++]);
+                    print_char((char)va_arg(args, int));
                     break;
                 case 'd':
                 case 'i':
-                    print_int((int)args[arg_index++]);
+                    print_int(va_arg(args, int));
                     break;
                 case 'x':
-                    print_hex(args[arg_index++]);
+                    print_hex(va_arg(args, unsigned int));
                     break;
                 case '%':
                     print_char('%');
@@ -175,4 +195,6 @@ void printf(const char *format, ...) {
         }
         ptr++;
     }
+    
+    va_end(args);
 }
