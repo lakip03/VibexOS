@@ -1,50 +1,62 @@
-You’ve previously written a minimal OS bootloader and kernel (NASM + C), and placed all code inside /src/. Refactor the project to follow a modular, scalable directory structure as shown below:
-📁 Target Directory Structure
+You are building a bare-metal operating system kernel (monolithic, C-based) without any standard C library. Write a primitive C library that includes:
+🧾 Requirements
 
-/vibexos/
-│
-├── Makefile                     # Updated Makefile reflecting new structure
-│
-├── /src/
-│   ├── /boot/                   # NASM bootloader
-│   │   └── bootloader.asm
-│   │
-│   ├── /kernel/                 # C kernel code
-│   │   └── kernel.c
-│   │
-│   └── /linker/                 # Linker script
-│       └── linker.ld
-│
-├── /build/                      # Object files, intermediate binaries
-│   ├── boot.o
-│   ├── kernel.o
-│   └── kernel.bin
-│
-├── /dist/                       # Final bootable image
-│   └── os.img
+    printf() implementation:
 
-🧾 Instructions for the LLM
+        Self-contained — no libc, stdlib, or stdio.
 
-    Move files:
+        Supports a minimal subset of format specifiers:
 
-        Move bootloader.asm into /src/boot/
+            %s – strings
 
-        Move kernel.c into /src/kernel/
+            %c – characters
 
-        Move linker.ld into /src/linker/
+            %d or %i – signed integers (base 10)
 
-    Refactor the Makefile:
+            %x – hexadecimal integers (lowercase)
 
-        Update all source paths to reflect the new structure.
+        Writes directly to the VGA text buffer at 0xB8000 in text mode.
 
-        Create /build and /dist automatically if they don't exist.
+        Supports newline (\n) handling (i.e., advances to the next row properly).
 
-        Compile assembly and C files into /build/*.o.
+    Modular design:
 
-        Link kernel to /build/kernel.bin.
+        Implement printf() on top of a simpler function like putchar() or print_char() that writes a single character to the VGA buffer.
 
-        Concatenate bootloader + kernel binary into /dist/os.img.
+        Include helper functions for:
 
-    No code logic needs to change, just move and rewire the build paths.
+            Integer to ASCII conversion (decimal and hexadecimal)
 
-    Optional: Add short comments in Makefile to explain what each step does for readability.
+            Cursor tracking (row/column)
+
+            Basic screen scrolling (optional)
+
+    Usage context:
+
+        This library will be used within the kernel (kernel.c) after bootloading completes and protected mode is active.
+
+        Written in C, compiled with gcc -m32.
+
+    Output:
+
+        File: /src/lib/printf.c (implementations)
+
+        Header: /src/include/printf.h (declarations)
+
+        Ensure header guards are present
+
+        The implementation must be freestanding and suitable for a kernel.
+
+    Example usage:
+
+        Demonstrate calling printf("Welcome to VibexOS version %d\n", 1); from within your kernel_main().
+
+📦 Output Should Include:
+
+    src/lib/printf.c – full implementation
+
+    src/include/printf.h – header with printf declaration
+
+    Example call inside kernel.c
+
+    Updated Makefile (optional): include -I src/include and compile printf.c into kernel binary.

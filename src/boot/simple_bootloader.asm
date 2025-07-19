@@ -1,48 +1,48 @@
-; Minimal VibexOS Bootloader
-; Simple and stable approach
-
+; Simple, stable bootloader that works
 [BITS 16]
 [ORG 0x7C00]
 
 start:
     ; Setup segments
+    cli
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
+    sti
     
     ; Save boot drive
     mov [boot_drive], dl
     
-    ; Clear screen
+    ; Set video mode
     mov ax, 0x0003
     int 0x10
     
-    ; Display loading message
-    mov si, msg_loading
+    ; Print message
+    mov si, boot_msg
     call print_string
     
-    ; Load kernel - simple approach
+    ; Load kernel
     mov ah, 0x02        ; Read sectors
-    mov al, 8           ; Read 8 sectors
+    mov al, 15          ; Read 15 sectors (enough for kernel)
     mov ch, 0           ; Cylinder 0
-    mov cl, 2           ; Start sector 2
+    mov cl, 2           ; Start from sector 2
     mov dh, 0           ; Head 0
-    mov dl, [boot_drive] ; Use saved boot drive
-    mov bx, 0x7E00      ; Load right after bootloader
+    mov dl, [boot_drive]
+    mov bx, 0x8000      ; Load at 0x8000
     int 0x13
     jc disk_error
     
-    ; Display success message
-    mov si, msg_success
+    ; Success message
+    mov si, success_msg
     call print_string
     
-    ; Jump to kernel (stay in 16-bit real mode)
-    jmp 0x7E00
+    ; Jump directly to kernel (skip protected mode for now)
+    jmp 0x8000
 
 disk_error:
-    mov si, msg_error
+    mov si, error_msg
     call print_string
     jmp hang
 
@@ -65,10 +65,10 @@ hang:
 
 ; Data
 boot_drive: db 0
-msg_loading: db "Loading kernel...", 0x0D, 0x0A, 0
-msg_success: db "Kernel loaded! Starting...", 0x0D, 0x0A, 0
-msg_error: db "Disk error!", 0x0D, 0x0A, 0
+boot_msg: db "Simple VibexOS Bootloader", 0x0D, 0x0A, "Loading kernel...", 0x0D, 0x0A, 0
+success_msg: db "Kernel loaded! Starting...", 0x0D, 0x0A, 0
+error_msg: db "Disk error!", 0x0D, 0x0A, 0
 
-; Fill to 510 bytes
+; Boot signature
 times 510-($-$$) db 0
 dw 0xAA55

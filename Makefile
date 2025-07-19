@@ -5,7 +5,7 @@
 ASM = nasm
 ASMFLAGS = -f bin
 CC = gcc
-CFLAGS = -m32 -ffreestanding -nostdlib -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-pic
+CFLAGS = -m32 -ffreestanding -nostdlib -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-pic -I $(SRC_DIR)/include
 LD = ld
 LDFLAGS = -T $(LINKER_SCRIPT)
 
@@ -15,11 +15,10 @@ BUILD_DIR = build
 DIST_DIR = dist
 
 # Files
-BOOTLOADER_SRC = $(SRC_DIR)/boot/bootloader.asm
-KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
-LINKER_SCRIPT = $(SRC_DIR)/linker/linker.ld
+BOOTLOADER_SRC = $(SRC_DIR)/boot/simple_bootloader.asm
+SIMPLE_KERNEL_SRC = $(SRC_DIR)/kernel/simple_kernel.asm
+KERNEL_LINKER_SCRIPT = $(SRC_DIR)/linker/linker.ld
 BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
-KERNEL_OBJ = $(BUILD_DIR)/kernel.o
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 OS_IMG = $(DIST_DIR)/os.img
 
@@ -33,20 +32,15 @@ $(OS_IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN) | $(DIST_DIR)
 	truncate -s 1440K $(OS_IMG)
 	@echo "OS image built successfully: $(OS_IMG)"
 
-# Build the bootloader binary
+# Build bootloader
 $(BOOTLOADER_BIN): $(BOOTLOADER_SRC) | $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
-	@echo "Bootloader built successfully: $(BOOTLOADER_BIN)"
+	@echo "Bootloader built: $(BOOTLOADER_BIN)"
 
-# Compile kernel object file
-$(KERNEL_OBJ): $(KERNEL_SRC) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $(KERNEL_SRC) -o $(KERNEL_OBJ)
-	@echo "Kernel object compiled: $(KERNEL_OBJ)"
-
-# Link kernel binary
-$(KERNEL_BIN): $(KERNEL_OBJ) $(LINKER_SCRIPT) | $(BUILD_DIR)
-	$(LD) $(LDFLAGS) $(KERNEL_OBJ) -o $(KERNEL_BIN)
-	@echo "Kernel binary linked: $(KERNEL_BIN)"
+# Build simple kernel (pure assembly, no linking needed)
+$(KERNEL_BIN): $(SIMPLE_KERNEL_SRC) | $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $(SIMPLE_KERNEL_SRC) -o $(KERNEL_BIN)
+	@echo "Simple kernel built: $(KERNEL_BIN)"
 
 # Ensure build and dist directories exist
 $(BUILD_DIR):

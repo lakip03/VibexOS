@@ -1,15 +1,25 @@
+#include "../include/printf.h"
+
 void _start(void) {
-    volatile unsigned char *video_memory = (volatile unsigned char *) 0xB8000;
-    const char *message = "Welcome to VibexOS";
-    int i = 0;
-    
-    while (message[i] != '\0') {
-        video_memory[i * 2] = message[i];
-        video_memory[i * 2 + 1] = 0x07;
-        i++;
+    // Clear screen first
+    volatile unsigned short *video = (volatile unsigned short*)0xB8000;
+    for (int i = 0; i < 80 * 25; i++) {
+        video[i] = 0x0720;
     }
     
-    while (1) {
-        __asm__("hlt");
-    }
+    // Test printf functionality
+    printf("Welcome to VibexOS version %d\n", 1);
+    printf("32-bit kernel running!\n");
+    printf("Printf library fully functional!\n");
+    printf("Character test: %c\n", 'A');
+    printf("String test: %s\n", "Hello World");
+    printf("Hex test: 0x%x\n", 0xDEAD);
+    printf("System halted. Press reset to restart.\n");
+    
+    // Proper halt - disable interrupts and halt once
+    __asm__ volatile("cli");
+    __asm__ volatile("hlt");
+    
+    // If we somehow continue, just return
+    return;
 }
