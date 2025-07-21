@@ -1,54 +1,68 @@
-You are extending your basic kernel shell in VibexOS with its first command: clear.
-🧾 Functional Requirements
+You are building a freestanding C kernel shell for VibexOS. Implement a minimal scanf-like function to read user input and store it in variables.
+🧾 Requirements
 
-    Command Behavior:
+    Functionality:
 
-        When the user types clear and presses Enter, the screen should:
+        Implement a primitive scanf()-style function called kscanf().
 
-            Be completely cleared (overwrite all VGA cells with spaces).
+        Must support only basic format specifiers:
 
-            Cursor should reset to the top-left corner (row 0, column 0).
+            %s → read a word into a char* buffer (null-terminated)
 
-    Environment:
+            %d → read an integer into an int*
 
-        You are operating in VGA text mode (0xB8000).
+        Input is read from the keyboard (buffered as usual).
 
-        All shell display output uses VGA memory directly (no framebuffer, no BIOS).
+        Parsing should stop at whitespace or Enter.
 
-        Input is captured from keyboard interrupts and stored in a buffer.
+    Constraints:
 
-    Design Constraints:
+        Freestanding kernel — no libc, no stdarg, no heap, no dynamic memory.
 
-        Modular architecture:
+        Input is already captured into a fixed-size buffer by your shell's keyboard ISR.
 
-            Implement vga_clear() inside src/drivers/vga.c.
+        Parsing and conversion must be manually handled.
 
-            Expose it via vga.h.
+        Function signature:
 
-            In the shell command handler (shell.c), detect "clear" and call vga_clear().
+    void kscanf(const char* format, ...);
 
-        Do not reset the input buffer unless Enter is pressed.
+Modular Code Layout:
 
-        Should not affect interrupt handling or IDT state.
+    src/lib/kscanf.c – implementation of kscanf.
 
-    Optional UX Polish:
+    src/include/kscanf.h – header file with include guards.
 
-        After clearing, redisplay the shell prompt like > at the top-left corner.
+    Reuse existing shell input buffer or allow kscanf() to read line-by-line.
 
-📦 LLM Output Should Include:
+    Provide helper functions (e.g., str_to_int() if needed).
 
-    vga_clear() implementation:
+Testing Scenario:
 
-        Wipes 80x25 VGA cells (usually 2000 characters) by writing spaces and default color.
+    Inside kernel_main() or your shell command handler, write a small test:
 
-        Resets row/column counters if used in your VGA abstraction.
+        char name[32];
+        int age;
+        printf("Enter your name: ");
+        kscanf("%s", name);
+        printf("Enter your age: ");
+        kscanf("%d", &age);
+        printf("Hello, %s. You are %d years old.\n", name, age);
 
-    Updated shell.c:
+    Optional:
 
-        In your shell loop or command handler, detect if buffer equals "clear" on Enter.
+        Make sure scanf skips leading whitespace.
 
-        If so, call vga_clear() and reprint the prompt.
+        If %s is too long, truncate and null-terminate.
 
-    Header update:
+        Can read input by reusing shell’s line buffer or directly hooking into the same keyboard logic.
 
-        src/include/vga.h should declare vga_clear() with proper include guard.
+📦 Output LLM Should Produce:
+
+    src/lib/kscanf.c – full implementation
+
+    src/include/kscanf.h – header with kscanf() declaration
+
+    Update to kernel_main() or shell to test it
+
+    Optional helper: str_to_int() if %d support is isolated

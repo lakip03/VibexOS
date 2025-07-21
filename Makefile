@@ -21,6 +21,7 @@ KERNEL_ENTRY_SRC = $(SRC_DIR)/kernel/entry.asm
 KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
 PRINTF_SRC = $(SRC_DIR)/lib/printf.c
 SCREEN_SRC = $(SRC_DIR)/lib/screen.c
+KSCANF_SRC = $(SRC_DIR)/lib/kscanf.c
 IDT_SRC = $(SRC_DIR)/kernel/idt.c
 IDT_ASM_SRC = $(SRC_DIR)/kernel/idt_asm.asm
 KEYBOARD_SRC = $(SRC_DIR)/drivers/keyboard.c
@@ -33,6 +34,7 @@ KERNEL_ENTRY_OBJ = $(BUILD_DIR)/entry.o
 KERNEL_OBJ = $(BUILD_DIR)/kernel.o
 PRINTF_OBJ = $(BUILD_DIR)/printf.o
 SCREEN_OBJ = $(BUILD_DIR)/screen.o
+KSCANF_OBJ = $(BUILD_DIR)/kscanf.o
 IDT_OBJ = $(BUILD_DIR)/idt.o
 IDT_ASM_OBJ = $(BUILD_DIR)/idt_asm.o
 KEYBOARD_OBJ = $(BUILD_DIR)/keyboard.o
@@ -82,6 +84,11 @@ $(SCREEN_OBJ): $(SCREEN_SRC) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $(SCREEN_SRC) -o $(SCREEN_OBJ)
 	@echo "Screen library compiled: $(SCREEN_OBJ)"
 
+# Compile kscanf library
+$(KSCANF_OBJ): $(KSCANF_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(KSCANF_SRC) -o $(KSCANF_OBJ)
+	@echo "Kscanf library compiled: $(KSCANF_OBJ)"
+
 # Compile IDT
 $(IDT_OBJ): $(IDT_SRC) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $(IDT_SRC) -o $(IDT_OBJ)
@@ -108,8 +115,8 @@ $(SHELL_OBJ): $(SHELL_SRC) | $(BUILD_DIR)
 	@echo "Shell compiled: $(SHELL_OBJ)"
 
 # Link kernel
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
-	$(LD) -T $(KERNEL_LINKER_SCRIPT) $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) -o $(KERNEL_BIN)
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
+	$(LD) -T $(KERNEL_LINKER_SCRIPT) $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) -o $(KERNEL_BIN)
 	@echo "Kernel linked: $(KERNEL_BIN)"
 
 # Ensure build and dist directories exist

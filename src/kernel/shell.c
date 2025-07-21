@@ -2,6 +2,7 @@
 #include "../include/keyboard.h"
 #include "../include/printf.h"
 #include "../include/vga.h"
+#include "../include/kscanf.h"
 
 static char command_buffer[SHELL_BUFFER_SIZE];
 static int buffer_pos = 0;
@@ -30,6 +31,15 @@ void shell_run(void) {
                 
                 if (strcmp(command_buffer, "clear") == 0) {
                     vga_clear();
+                    printf("> ");
+                } else if (strcmp(command_buffer, "test") == 0) {
+                    char name[32];
+                    int age;
+                    printf("\nEnter your name: ");
+                    kscanf("%s", name);
+                    printf("Enter your age: ");
+                    kscanf("%d", &age);
+                    printf("Hello, %s. You are %d years old.\n", name, age);
                     printf("> ");
                 } else {
                     printf("\nYou typed: %s\n", command_buffer);
