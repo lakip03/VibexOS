@@ -43,6 +43,13 @@ void print_char(char c) {
         return;
     }
     
+    if (c == '\b') {
+        if (cursor_x > 0) {
+            cursor_x--;
+        }
+        return;
+    }
+    
     if (cursor_x >= VGA_WIDTH) {
         cursor_x = 0;
         cursor_y++;
