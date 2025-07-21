@@ -1,67 +1,54 @@
-
-✅ Prompt: Build a Basic Kernel Shell (Input + Echo) in C
-
-You are writing a basic shell for your monolithic operating system kernel (VibexOS). Generate C code that provides:
+You are extending your basic kernel shell in VibexOS with its first command: clear.
 🧾 Functional Requirements
 
-    Input from keyboard:
+    Command Behavior:
 
-        Read key presses from keyboard hardware via the keyboard interrupt (IRQ1).
+        When the user types clear and presses Enter, the screen should:
 
-        Decode scancodes into ASCII characters (handle lowercase letters, digits, and basic symbols).
+            Be completely cleared (overwrite all VGA cells with spaces).
 
-        Store typed characters into a buffer in RAM (use a fixed-size char array).
-
-    Display to screen:
-
-        For every keypress, echo the character to screen via VGA text mode (write to 0xB8000).
-
-        When Enter is pressed:
-
-            Move to a new line.
-
-            Print: You typed: <buffered string> (or similar response).
-
-            Then clear the buffer and wait for next input.
+            Cursor should reset to the top-left corner (row 0, column 0).
 
     Environment:
 
-        Written in C, compiled with gcc -m32, running after the bootloader.
+        You are operating in VGA text mode (0xB8000).
 
-        Assume protected mode is active.
+        All shell display output uses VGA memory directly (no framebuffer, no BIOS).
 
-        Keyboard interrupt handling should be set up via the IDT (Interrupt Descriptor Table).
+        Input is captured from keyboard interrupts and stored in a buffer.
 
-    Constraints:
+    Design Constraints:
 
-        Do not use libc or any OS features — this is a freestanding kernel.
+        Modular architecture:
 
-        Handle only printable ASCII characters and backspace (optional).
+            Implement vga_clear() inside src/drivers/vga.c.
 
-        Keep implementation modular (e.g., separate keyboard.c, shell.c, vga.c files).
+            Expose it via vga.h.
 
-📦 Output Should Include:
+            In the shell command handler (shell.c), detect "clear" and call vga_clear().
 
-    src/kernel/shell.c – core loop that handles input + echo
+        Do not reset the input buffer unless Enter is pressed.
 
-    src/drivers/keyboard.c – ISR and buffer management
+        Should not affect interrupt handling or IDT state.
 
-    src/drivers/vga.c – VGA text-mode display helpers (optional if not already created)
+    Optional UX Polish:
 
-    src/include/*.h – headers for each module (with include guards)
+        After clearing, redisplay the shell prompt like > at the top-left corner.
 
-    Example session:
+📦 LLM Output Should Include:
 
-    > hello world
-    You typed: hello world
-    >
+    vga_clear() implementation:
 
-    BONUS (Optional): Implement basic scrolling if VGA reaches bottom of screen.
+        Wipes 80x25 VGA cells (usually 2000 characters) by writing spaces and default color.
 
-⚙️ Integration Notes
+        Resets row/column counters if used in your VGA abstraction.
 
-    Make sure your IDT is initialized and the IRQ1 interrupt handler is correctly set up.
+    Updated shell.c:
 
-    Remap the PIC if needed (IRQ1 = INT 0x21 or similar).
+        In your shell loop or command handler, detect if buffer equals "clear" on Enter.
 
-    The shell loop can run from kernel_main() after enabling interrupts (sti).
+        If so, call vga_clear() and reprint the prompt.
+
+    Header update:
+
+        src/include/vga.h should declare vga_clear() with proper include guard.
