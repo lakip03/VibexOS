@@ -1,5 +1,6 @@
 #include "../include/kscanf.h"
 #include "../include/keyboard.h"
+#include "../include/printf.h"
 
 static char input_buffer[256];
 static int input_pos = 0;
@@ -40,14 +41,17 @@ static void read_input_line(void) {
         
         if (key == '\n') {
             input_buffer[input_pos] = '\0';
+            printf("\n");
             break;
         } else if (key == '\b') {
             if (input_pos > 0) {
                 input_pos--;
+                printf("\b \b");
             }
         } else if (key >= 32 && key <= 126) {
             if (input_pos < 255) {
                 input_buffer[input_pos++] = key;
+                printf("%c", key);
             }
         }
     }
