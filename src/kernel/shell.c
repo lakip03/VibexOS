@@ -1,9 +1,18 @@
 #include "../include/shell.h"
 #include "../include/keyboard.h"
 #include "../include/printf.h"
+#include "../include/vga.h"
 
 static char command_buffer[SHELL_BUFFER_SIZE];
 static int buffer_pos = 0;
+
+static int strcmp(const char *str1, const char *str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
 
 void shell_init(void) {
     buffer_pos = 0;
@@ -18,11 +27,17 @@ void shell_run(void) {
             if (key == '\n') {
                 // Enter pressed - process command
                 command_buffer[buffer_pos] = '\0';
-                printf("\nYou typed: %s\n", command_buffer);
+                
+                if (strcmp(command_buffer, "clear") == 0) {
+                    vga_clear();
+                    printf("> ");
+                } else {
+                    printf("\nYou typed: %s\n", command_buffer);
+                    printf("> ");
+                }
                 
                 // Reset buffer for next command
                 buffer_pos = 0;
-                printf("> ");
             } else if (key == '\b') {
                 // Backspace
                 if (buffer_pos > 0) {
