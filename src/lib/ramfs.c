@@ -82,7 +82,18 @@ int ramfs_list_files(void) {
     
     for (int i = 0; i < RAMFS_MAX_FILES; i++) {
         if (ramfs[i].used) {
-            printf("  %-20s %d bytes\n", ramfs[i].name, ramfs[i].size);
+            printf("  %s", ramfs[i].name);
+            
+            // Add padding spaces to align the size
+            int name_len = strlen(ramfs[i].name);
+            int padding = 20 - name_len;
+            if (padding < 1) padding = 1;
+            
+            for (int j = 0; j < padding; j++) {
+                printf(" ");
+            }
+            
+            printf("%d bytes\n", ramfs[i].size);
         }
     }
     
