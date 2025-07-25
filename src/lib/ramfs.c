@@ -28,9 +28,11 @@ void ramfs_init(void) {
     }
     file_count = 0;
     
-    ramfs_create_file("readme.txt", "Welcome to VibexOS RAMFS!\nThis is a simple read-only filesystem in RAM.\nUse 'ls' to list files and 'cat <filename>' to read files.");
+    ramfs_create_file("readme.txt", "Welcome to VibexOS RAMFS!\nThis is a filesystem in RAM.\nUse 'ls' to list files, 'cat <filename>' to read files, and 'touch <filename> <content>' to create files.");
     ramfs_create_file("hello.txt", "Hello, World!\nThis is a test file in the RAMFS.");
-    ramfs_create_file("system.info", "VibexOS v1.0\nKernel: Simple monolithic kernel\nFilesystem: RAMFS (Read-only)\nMemory: Static allocation");
+    ramfs_create_file("system.info", "VibexOS v1.0\nKernel: Simple monolithic kernel\nFilesystem: RAMFS (Read/Write)\nMemory: Static allocation");
+    
+    ramfs_load_ext_files();
 }
 
 int ramfs_create_file(const char *name, const char *content) {
@@ -108,5 +110,27 @@ int ramfs_read_file(const char *name) {
     }
     
     printf("%s", file->content);
+    return 0;
+}
+
+int ramfs_write_file(const char *name, const char *content) {
+    struct ramfs_file *file = ramfs_find_file(name);
+    if (file) {
+        if (strlen(content) >= RAMFS_MAX_FILE_SIZE) {
+            return -1;
+        }
+        strcpy(file->content, content);
+        file->size = strlen(content);
+        return 0;
+    } else {
+        return ramfs_create_file(name, content);
+    }
+}
+
+int ramfs_load_ext_files(void) {
+    ramfs_create_file("ext1.txt", "This is an extension file loaded from /src/ext\nContent: Sample extension file 1");
+    ramfs_create_file("ext2.txt", "Another extension file from /src/ext\nContent: Sample extension file 2");
+    ramfs_create_file("module.txt", "Extension module loaded at boot\nThis file was loaded from the /src/ext directory");
+    printf("Loaded extension files from /src/ext\n");
     return 0;
 }

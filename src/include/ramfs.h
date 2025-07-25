@@ -17,5 +17,7 @@ int ramfs_create_file(const char *name, const char *content);
 struct ramfs_file *ramfs_find_file(const char *name);
 int ramfs_list_files(void);
 int ramfs_read_file(const char *name);
+int ramfs_load_ext_files(void);
+int ramfs_write_file(const char *name, const char *content);
 
 #endif

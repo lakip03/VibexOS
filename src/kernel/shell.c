@@ -28,6 +28,13 @@ static int strncmp(const char *str1, const char *str2, int n) {
     return 0;
 }
 
+static void strcpy(char *dest, const char *src) {
+    while (*src) {
+        *dest++ = *src++;
+    }
+    *dest = '\0';
+}
+
 static void extract_argument(const char *command, char *arg) {
     int i = 0;
     while (command[i] && command[i] != ' ') i++;
@@ -38,6 +45,26 @@ static void extract_argument(const char *command, char *arg) {
         arg[j++] = command[i++];
     }
     arg[j] = '\0';
+}
+
+static void extract_two_arguments(const char *command, char *arg1, char *arg2) {
+    int i = 0;
+    while (command[i] && command[i] != ' ') i++;
+    while (command[i] && command[i] == ' ') i++;
+    
+    int j = 0;
+    while (command[i] && command[i] != ' ' && j < 31) {
+        arg1[j++] = command[i++];
+    }
+    arg1[j] = '\0';
+    
+    while (command[i] && command[i] == ' ') i++;
+    
+    j = 0;
+    while (command[i] && j < 1023) {
+        arg2[j++] = command[i++];
+    }
+    arg2[j] = '\0';
 }
 
 void shell_init(void) {
@@ -72,6 +99,25 @@ void shell_run(void) {
                         ramfs_read_file(filename);
                     }
                     printf("\n> ");
+                } else if (strncmp(command_buffer, "touch ", 6) == 0) {
+                    char filename[32];
+                    char content[1024];
+                    extract_two_arguments(command_buffer, filename, content);
+                    printf("\n");
+                    if (filename[0] == '\0') {
+                        printf("Usage: touch <filename> <content>\n");
+                    } else {
+                        if (content[0] == '\0') {
+                            strcpy(content, "");
+                        }
+                        int result = ramfs_write_file(filename, content);
+                        if (result == 0) {
+                            printf("File '%s' created/updated successfully\n", filename);
+                        } else {
+                            printf("Failed to create/update file '%s'\n", filename);
+                        }
+                    }
+                    printf("> ");
                 } else if (strcmp(command_buffer, "test") == 0) {
                     char name[32];
                     int age;
