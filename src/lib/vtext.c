@@ -33,6 +33,19 @@ void vtext_init(vtext_editor *editor, const char *filename) {
     }
     
     vtext_load_file(editor);
+    
+    // If file is empty, show welcome message
+    if (editor->line_count == 1 && strlen(editor->lines[0]) == 0) {
+        strcpy(editor->lines[0], "Welcome to VText Editor!");
+        strcpy(editor->lines[1], "");
+        strcpy(editor->lines[2], "You can start typing to create content.");
+        strcpy(editor->lines[3], "Press F12 to save, F4 to exit.");
+        strcpy(editor->lines[4], "Use arrow keys to navigate.");
+        strcpy(editor->lines[5], "");
+        strcpy(editor->lines[6], "Delete this text and start writing!");
+        editor->line_count = 7;
+        editor->modified = 1;
+    }
 }
 
 void vtext_run(vtext_editor *editor) {
@@ -89,7 +102,7 @@ void vtext_display(vtext_editor *editor) {
            editor->cursor_col + 1);
     
     gotoxy(0, 24);
-    printf("VText Editor - Simple text editor for VibexOS");
+    printf("VText Editor | Arrow Keys=Navigate | Enter=New Line | Backspace=Delete");
     
     int display_cursor_line = editor->cursor_line - editor->top_line;
     if (display_cursor_line >= 0 && display_cursor_line < display_lines) {

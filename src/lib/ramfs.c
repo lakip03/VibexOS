@@ -28,9 +28,10 @@ void ramfs_init(void) {
     }
     file_count = 0;
     
-    ramfs_create_file("readme.txt", "Welcome to VibexOS RAMFS!\nThis is a filesystem in RAM.\nUse 'ls' to list files, 'cat <filename>' to read files, and 'touch <filename> <content>' to create files.");
-    ramfs_create_file("hello.txt", "Hello, World!\nThis is a test file in the RAMFS.");
-    ramfs_create_file("system.info", "VibexOS v1.0\nKernel: Simple monolithic kernel\nFilesystem: RAMFS (Read/Write)\nMemory: Static allocation");
+    ramfs_create_file("readme.txt", "Welcome to VibexOS!\n\nThis operating system features:\n- VText text editor with cursor support\n- RAMFS in-memory filesystem\n- Interactive shell with helpful commands\n\nTry: 'help', 'info', 'vtext newfile.txt'");
+    ramfs_create_file("hello.txt", "Hello, World!\n\nThis is a sample file.\nYou can edit it with: vtext hello.txt\n\nFeatures:\n- Arrow key navigation\n- F12 to save\n- F4 to exit");
+    ramfs_create_file("commands.txt", "VibexOS Quick Reference:\n\nls - List files\ncat <file> - Show file contents\ntouch <file> <text> - Create file\nvtext <file> - Edit with VText\nclear - Clear screen\nhelp - Show detailed help\ninfo - System information");
+    ramfs_create_file("system.info", "VibexOS v1.0\nArchitecture: x86 (32-bit)\nKernel: Monolithic\nFilesystem: RAMFS\nEditor: VText\nFeatures: Hardware cursor, Function keys");
     
     ramfs_load_ext_files();
 }
