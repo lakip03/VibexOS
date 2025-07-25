@@ -1,0 +1,101 @@
+#include "../include/ramfs.h"
+#include "../include/printf.h"
+
+static struct ramfs_file ramfs[RAMFS_MAX_FILES];
+static int file_count = 0;
+
+static int strcmp(const char *str1, const char *str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+static void strcpy(char *dest, const char *src) {
+    while (*src) {
+        *dest++ = *src++;
+    }
+    *dest = '\0';
+}
+
+void ramfs_init(void) {
+    for (int i = 0; i < RAMFS_MAX_FILES; i++) {
+        ramfs[i].used = 0;
+        ramfs[i].size = 0;
+        ramfs[i].name[0] = '\0';
+        ramfs[i].content[0] = '\0';
+    }
+    file_count = 0;
+    
+    ramfs_create_file("readme.txt", "Welcome to VibexOS RAMFS!\nThis is a simple read-only filesystem in RAM.\nUse 'ls' to list files and 'cat <filename>' to read files.");
+    ramfs_create_file("hello.txt", "Hello, World!\nThis is a test file in the RAMFS.");
+    ramfs_create_file("system.info", "VibexOS v1.0\nKernel: Simple monolithic kernel\nFilesystem: RAMFS (Read-only)\nMemory: Static allocation");
+}
+
+int ramfs_create_file(const char *name, const char *content) {
+    if (file_count >= RAMFS_MAX_FILES) {
+        return -1;
+    }
+    
+    if (strlen(name) >= RAMFS_MAX_FILENAME_LEN) {
+        return -1;
+    }
+    
+    if (strlen(content) >= RAMFS_MAX_FILE_SIZE) {
+        return -1;
+    }
+    
+    if (ramfs_find_file(name) != 0) {
+        return -1;
+    }
+    
+    for (int i = 0; i < RAMFS_MAX_FILES; i++) {
+        if (!ramfs[i].used) {
+            strcpy(ramfs[i].name, name);
+            strcpy(ramfs[i].content, content);
+            ramfs[i].size = strlen(content);
+            ramfs[i].used = 1;
+            file_count++;
+            return 0;
+        }
+    }
+    
+    return -1;
+}
+
+struct ramfs_file *ramfs_find_file(const char *name) {
+    for (int i = 0; i < RAMFS_MAX_FILES; i++) {
+        if (ramfs[i].used && strcmp(ramfs[i].name, name) == 0) {
+            return &ramfs[i];
+        }
+    }
+    return 0;
+}
+
+int ramfs_list_files(void) {
+    printf("Files in RAMFS:\n");
+    if (file_count == 0) {
+        printf("  (no files)\n");
+        return 0;
+    }
+    
+    for (int i = 0; i < RAMFS_MAX_FILES; i++) {
+        if (ramfs[i].used) {
+            printf("  %-20s %d bytes\n", ramfs[i].name, ramfs[i].size);
+        }
+    }
+    
+    return file_count;
+}
+
+int ramfs_read_file(const char *name) {
+    struct ramfs_file *file = ramfs_find_file(name);
+    if (!file) {
+        printf("File not found: %s\n", name);
+        return -1;
+    }
+    
+    printf("%s", file->content);
+    return 0;
+}

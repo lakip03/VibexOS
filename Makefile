@@ -27,6 +27,7 @@ IDT_ASM_SRC = $(SRC_DIR)/kernel/idt_asm.asm
 KEYBOARD_SRC = $(SRC_DIR)/drivers/keyboard.c
 VGA_SRC = $(SRC_DIR)/drivers/vga.c
 SHELL_SRC = $(SRC_DIR)/kernel/shell.c
+RAMFS_SRC = $(SRC_DIR)/lib/ramfs.c
 KERNEL_LINKER_SCRIPT = $(SRC_DIR)/linker/linker.ld
 STAGE1_BIN = $(BUILD_DIR)/stage1.bin
 STAGE2_BIN = $(BUILD_DIR)/stage2.bin
@@ -40,6 +41,7 @@ IDT_ASM_OBJ = $(BUILD_DIR)/idt_asm.o
 KEYBOARD_OBJ = $(BUILD_DIR)/keyboard.o
 VGA_OBJ = $(BUILD_DIR)/vga.o
 SHELL_OBJ = $(BUILD_DIR)/shell.o
+RAMFS_OBJ = $(BUILD_DIR)/ramfs.o
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 OS_IMG = $(DIST_DIR)/os.img
 
@@ -114,9 +116,14 @@ $(SHELL_OBJ): $(SHELL_SRC) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $(SHELL_SRC) -o $(SHELL_OBJ)
 	@echo "Shell compiled: $(SHELL_OBJ)"
 
+# Compile RAMFS
+$(RAMFS_OBJ): $(RAMFS_SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $(RAMFS_SRC) -o $(RAMFS_OBJ)
+	@echo "RAMFS compiled: $(RAMFS_OBJ)"
+
 # Link kernel
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
-	$(LD) -T $(KERNEL_LINKER_SCRIPT) $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) -o $(KERNEL_BIN)
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) $(RAMFS_OBJ) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
+	$(LD) -T $(KERNEL_LINKER_SCRIPT) $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(PRINTF_OBJ) $(SCREEN_OBJ) $(KSCANF_OBJ) $(IDT_OBJ) $(IDT_ASM_OBJ) $(KEYBOARD_OBJ) $(VGA_OBJ) $(SHELL_OBJ) $(RAMFS_OBJ) -o $(KERNEL_BIN)
 	@echo "Kernel linked: $(KERNEL_BIN)"
 
 # Ensure build and dist directories exist
