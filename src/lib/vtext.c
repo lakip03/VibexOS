@@ -40,18 +40,14 @@ void vtext_run(vtext_editor *editor) {
     vtext_display(editor);
     
     while (1) {
-        if (is_key_available()) {
+        int special_key = vtext_get_special_key();
+        if (special_key == SPECIAL_KEY_F4) {
+            return;
+        } else if (special_key == SPECIAL_KEY_F12) {
+            vtext_save_file(editor);
+            vtext_display(editor);
+        } else if (is_key_available()) {
             char key = get_key_from_buffer();
-            
-            int special_key = vtext_get_special_key();
-            if (special_key == SPECIAL_KEY_F4) {
-                return;
-            } else if (special_key == SPECIAL_KEY_F12) {
-                vtext_save_file(editor);
-                vtext_display(editor);
-                continue;
-            }
-            
             vtext_handle_key(editor, key);
             vtext_display(editor);
         }

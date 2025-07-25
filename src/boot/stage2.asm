@@ -32,7 +32,7 @@ load_kernel:
     call print_string
     
     mov ah, 0x02
-    mov al, 20
+    mov al, 64
     mov ch, 0
     mov cl, 10
     mov dh, 0
@@ -49,10 +49,7 @@ kernel_load_error:
 
 print_string:
     mov ah, 0x0E
-.    call print_string
-    
-    mov ah, 0x02
-    mov al, 8loop:
+.loop:
     lodsb
     cmp al, 0
     je .done
