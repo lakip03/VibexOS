@@ -4,6 +4,7 @@
 static char keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 static int buffer_start = 0;
 static int buffer_end = 0;
+static int shift_pressed = 0;
 
 // US QWERTY scancode to ASCII translation table (for scancodes 0x01-0x58)
 static char scancode_to_ascii[] = {
@@ -13,6 +14,18 @@ static char scancode_to_ascii[] = {
     0,    '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0,
     '*',  0,   ' '
 };
+
+// Shift-modified characters for numbers and symbols
+static char scancode_to_shift_ascii[] = {
+    0,    0,   '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
+    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',
+    0,    'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
+    0,    '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0,
+    '*',  0,   ' '
+};
+
+#define SCANCODE_LSHIFT 0x2A
+#define SCANCODE_RSHIFT 0x36
 
 static unsigned char inb(unsigned short port) {
     unsigned char result;
@@ -31,16 +44,42 @@ static void add_to_buffer(char c) {
 void keyboard_init(void) {
     buffer_start = 0;
     buffer_end = 0;
+    shift_pressed = 0;
 }
 
 void keyboard_handler(void) {
     unsigned char scancode = inb(KEYBOARD_DATA_PORT);
     
-    // Only handle key press events (bit 7 clear)
-    if (!(scancode & 0x80)) {
+    // Check for key release (bit 7 set)
+    if (scancode & 0x80) {
+        // Key release
+        scancode &= 0x7F;  // Remove the release bit
+        
+        // Handle shift key release
+        if (scancode == SCANCODE_LSHIFT || scancode == SCANCODE_RSHIFT) {
+            shift_pressed = 0;
+        }
+    } else {
+        // Key press
+        
+        // Handle shift key press
+        if (scancode == SCANCODE_LSHIFT || scancode == SCANCODE_RSHIFT) {
+            shift_pressed = 1;
+            return;  // Don't add shift to buffer
+        }
+        
         // Convert scancode to ASCII if it's in our table
-        if (scancode < sizeof(scancode_to_ascii) && scancode_to_ascii[scancode] != 0) {
-            char ascii = scancode_to_ascii[scancode];
+        if (scancode < sizeof(scancode_to_ascii)) {
+            char ascii;
+            
+            if (shift_pressed && scancode < sizeof(scancode_to_shift_ascii) && scancode_to_shift_ascii[scancode] != 0) {
+                ascii = scancode_to_shift_ascii[scancode];
+            } else if (scancode_to_ascii[scancode] != 0) {
+                ascii = scancode_to_ascii[scancode];
+            } else {
+                return;  // No valid character mapping
+            }
+            
             add_to_buffer(ascii);
         }
     }
