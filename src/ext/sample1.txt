@@ -1,3 +1,2 @@
-This is a sample extension file.
-It will be loaded into the RAMFS at boot time.
-Content: Sample extension module 1
+saffasds
+Content: adasd
