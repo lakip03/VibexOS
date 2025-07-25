@@ -6,6 +6,8 @@ static int buffer_start = 0;
 static int buffer_end = 0;
 static int shift_pressed = 0;
 static unsigned char last_function_key = 0;
+static unsigned char last_arrow_key = 0;
+static int extended_scancode = 0;
 
 // US QWERTY scancode to ASCII translation table (for scancodes 0x01-0x58)
 static char scancode_to_ascii[] = {
@@ -42,6 +44,12 @@ static char scancode_to_shift_ascii[] = {
 #define SCANCODE_F11 0x57
 #define SCANCODE_F12 0x58
 
+// Arrow key scancodes (extended)
+#define SCANCODE_UP    0x48
+#define SCANCODE_DOWN  0x50
+#define SCANCODE_LEFT  0x4B
+#define SCANCODE_RIGHT 0x4D
+
 static unsigned char inb(unsigned short port) {
     unsigned char result;
     asm volatile("inb %1, %0" : "=a"(result) : "dN"(port));
@@ -65,10 +73,18 @@ void keyboard_init(void) {
     buffer_end = 0;
     shift_pressed = 0;
     last_function_key = 0;
+    last_arrow_key = 0;
+    extended_scancode = 0;
 }
 
 void keyboard_handler(void) {
     unsigned char scancode = inb(KEYBOARD_DATA_PORT);
+    
+    // Check for extended scancode prefix
+    if (scancode == 0xE0) {
+        extended_scancode = 1;
+        return;
+    }
     
     // Check for key release (bit 7 set)
     if (scancode & 0x80) {
@@ -79,8 +95,21 @@ void keyboard_handler(void) {
         if (scancode == SCANCODE_LSHIFT || scancode == SCANCODE_RSHIFT) {
             shift_pressed = 0;
         }
+        
+        extended_scancode = 0;
     } else {
         // Key press
+        
+        // Handle arrow keys (extended scancodes)
+        if (extended_scancode) {
+            if (scancode == SCANCODE_UP || scancode == SCANCODE_DOWN || 
+                scancode == SCANCODE_LEFT || scancode == SCANCODE_RIGHT) {
+                last_arrow_key = scancode;
+                extended_scancode = 0;
+                return;
+            }
+            extended_scancode = 0;
+        }
         
         // Handle shift key press
         if (scancode == SCANCODE_LSHIFT || scancode == SCANCODE_RSHIFT) {
@@ -132,4 +161,12 @@ int get_last_function_key(void) {
 
 void clear_function_key(void) {
     last_function_key = 0;
+}
+
+int get_last_arrow_key(void) {
+    return last_arrow_key;
+}
+
+void clear_arrow_key(void) {
+    last_arrow_key = 0;
 }

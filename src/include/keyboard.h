@@ -11,5 +11,7 @@ char get_key_from_buffer(void);
 int is_key_available(void);
 int get_last_function_key(void);
 void clear_function_key(void);
+int get_last_arrow_key(void);
+void clear_arrow_key(void);
 
 #endif

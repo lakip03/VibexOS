@@ -25,4 +25,18 @@ void gotoxy(int x, int y) {
 
 void set_cursor_position(int x, int y) {
     gotoxy(x, y);
+    update_hardware_cursor(x, y);
+}
+
+static void outb(unsigned short port, unsigned char value) {
+    asm volatile("outb %0, %1" : : "a"(value), "dN"(port));
+}
+
+void update_hardware_cursor(int x, int y) {
+    unsigned short pos = y * VGA_WIDTH + x;
+    
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (unsigned char)(pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (unsigned char)((pos >> 8) & 0xFF));
 }

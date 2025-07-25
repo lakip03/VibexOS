@@ -33,6 +33,7 @@ load_kernel:
     
     mov ah, 0x02
     mov al, 64
+    
     mov ch, 0
     mov cl, 10
     mov dh, 0

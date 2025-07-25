@@ -46,6 +46,21 @@ void vtext_run(vtext_editor *editor) {
         } else if (special_key == SPECIAL_KEY_F12) {
             vtext_save_file(editor);
             vtext_display(editor);
+        }
+        
+        int arrow_key = vtext_get_arrow_key();
+        if (arrow_key == SPECIAL_KEY_UP) {
+            vtext_move_cursor_up(editor);
+            vtext_display(editor);
+        } else if (arrow_key == SPECIAL_KEY_DOWN) {
+            vtext_move_cursor_down(editor);
+            vtext_display(editor);
+        } else if (arrow_key == SPECIAL_KEY_LEFT) {
+            vtext_move_cursor_left(editor);
+            vtext_display(editor);
+        } else if (arrow_key == SPECIAL_KEY_RIGHT) {
+            vtext_move_cursor_right(editor);
+            vtext_display(editor);
         } else if (is_key_available()) {
             char key = get_key_from_buffer();
             vtext_handle_key(editor, key);
@@ -78,7 +93,7 @@ void vtext_display(vtext_editor *editor) {
     
     int display_cursor_line = editor->cursor_line - editor->top_line;
     if (display_cursor_line >= 0 && display_cursor_line < display_lines) {
-        gotoxy(editor->cursor_col, display_cursor_line);
+        update_hardware_cursor(editor->cursor_col, display_cursor_line);
     }
 }
 
@@ -154,7 +169,7 @@ void vtext_new_line(vtext_editor *editor) {
         editor->cursor_col = 0;
         editor->modified = 1;
         
-        if (editor->cursor_line - editor->top_line >= 23 - VTEXT_STATUS_HEIGHT) {
+        if (editor->cursor_line - editor->top_line >= 21) {
             editor->top_line++;
         }
     }
@@ -215,4 +230,68 @@ int vtext_get_special_key(void) {
         return key;
     }
     return 0;
+}
+
+int vtext_get_arrow_key(void) {
+    int key = get_last_arrow_key();
+    if (key != 0) {
+        clear_arrow_key();
+        return key;
+    }
+    return 0;
+}
+
+void vtext_move_cursor_up(vtext_editor *editor) {
+    if (editor->cursor_line > 0) {
+        editor->cursor_line--;
+        int line_len = strlen(editor->lines[editor->cursor_line]);
+        if (editor->cursor_col > line_len) {
+            editor->cursor_col = line_len;
+        }
+        
+        if (editor->cursor_line < editor->top_line) {
+            editor->top_line = editor->cursor_line;
+        }
+    }
+}
+
+void vtext_move_cursor_down(vtext_editor *editor) {
+    if (editor->cursor_line < editor->line_count - 1) {
+        editor->cursor_line++;
+        int line_len = strlen(editor->lines[editor->cursor_line]);
+        if (editor->cursor_col > line_len) {
+            editor->cursor_col = line_len;
+        }
+        
+        if (editor->cursor_line - editor->top_line >= 21) {
+            editor->top_line++;
+        }
+    }
+}
+
+void vtext_move_cursor_left(vtext_editor *editor) {
+    if (editor->cursor_col > 0) {
+        editor->cursor_col--;
+    } else if (editor->cursor_line > 0) {
+        editor->cursor_line--;
+        editor->cursor_col = strlen(editor->lines[editor->cursor_line]);
+        
+        if (editor->cursor_line < editor->top_line) {
+            editor->top_line = editor->cursor_line;
+        }
+    }
+}
+
+void vtext_move_cursor_right(vtext_editor *editor) {
+    int line_len = strlen(editor->lines[editor->cursor_line]);
+    if (editor->cursor_col < line_len) {
+        editor->cursor_col++;
+    } else if (editor->cursor_line < editor->line_count - 1) {
+        editor->cursor_line++;
+        editor->cursor_col = 0;
+        
+        if (editor->cursor_line - editor->top_line >= 21) {
+            editor->top_line++;
+        }
+    }
 }
