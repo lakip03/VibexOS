@@ -4,6 +4,7 @@
 #include "../include/vga.h"
 #include "../include/kscanf.h"
 #include "../include/ramfs.h"
+#include "../include/vtext.h"
 
 static char command_buffer[SHELL_BUFFER_SIZE];
 static int buffer_pos = 0;
@@ -118,6 +119,19 @@ void shell_run(void) {
                         }
                     }
                     printf("> ");
+                } else if (strncmp(command_buffer, "vtext ", 6) == 0) {
+                    char filename[32];
+                    extract_argument(command_buffer, filename);
+                    if (filename[0] == '\0') {
+                        printf("\nUsage: vtext <filename>\n");
+                        printf("> ");
+                    } else {
+                        vtext_editor editor;
+                        vtext_init(&editor, filename);
+                        vtext_run(&editor);
+                        vga_clear();
+                        printf("> ");
+                    }
                 } else if (strcmp(command_buffer, "test") == 0) {
                     char name[32];
                     int age;

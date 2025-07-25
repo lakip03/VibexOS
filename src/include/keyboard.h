@@ -9,5 +9,7 @@ void keyboard_init(void);
 void keyboard_handler(void);
 char get_key_from_buffer(void);
 int is_key_available(void);
+int get_last_function_key(void);
+void clear_function_key(void);
 
 #endif

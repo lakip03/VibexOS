@@ -49,7 +49,10 @@ kernel_load_error:
 
 print_string:
     mov ah, 0x0E
-.loop:
+.    call print_string
+    
+    mov ah, 0x02
+    mov al, 8loop:
     lodsb
     cmp al, 0
     je .done

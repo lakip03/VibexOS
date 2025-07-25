@@ -5,6 +5,7 @@ static char keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 static int buffer_start = 0;
 static int buffer_end = 0;
 static int shift_pressed = 0;
+static unsigned char last_function_key = 0;
 
 // US QWERTY scancode to ASCII translation table (for scancodes 0x01-0x58)
 static char scancode_to_ascii[] = {
@@ -27,6 +28,20 @@ static char scancode_to_shift_ascii[] = {
 #define SCANCODE_LSHIFT 0x2A
 #define SCANCODE_RSHIFT 0x36
 
+// Function key scancodes
+#define SCANCODE_F1  0x3B
+#define SCANCODE_F2  0x3C
+#define SCANCODE_F3  0x3D
+#define SCANCODE_F4  0x3E
+#define SCANCODE_F5  0x3F
+#define SCANCODE_F6  0x40
+#define SCANCODE_F7  0x41
+#define SCANCODE_F8  0x42
+#define SCANCODE_F9  0x43
+#define SCANCODE_F10 0x44
+#define SCANCODE_F11 0x57
+#define SCANCODE_F12 0x58
+
 static unsigned char inb(unsigned short port) {
     unsigned char result;
     asm volatile("inb %1, %0" : "=a"(result) : "dN"(port));
@@ -41,10 +56,15 @@ static void add_to_buffer(char c) {
     }
 }
 
+static void handle_function_key(unsigned char scancode) {
+    last_function_key = scancode;
+}
+
 void keyboard_init(void) {
     buffer_start = 0;
     buffer_end = 0;
     shift_pressed = 0;
+    last_function_key = 0;
 }
 
 void keyboard_handler(void) {
@@ -66,6 +86,13 @@ void keyboard_handler(void) {
         if (scancode == SCANCODE_LSHIFT || scancode == SCANCODE_RSHIFT) {
             shift_pressed = 1;
             return;  // Don't add shift to buffer
+        }
+        
+        // Handle function keys
+        if ((scancode >= SCANCODE_F1 && scancode <= SCANCODE_F10) || 
+            scancode == SCANCODE_F11 || scancode == SCANCODE_F12) {
+            handle_function_key(scancode);
+            return;
         }
         
         // Convert scancode to ASCII if it's in our table
@@ -97,4 +124,12 @@ char get_key_from_buffer(void) {
 
 int is_key_available(void) {
     return buffer_start != buffer_end;
+}
+
+int get_last_function_key(void) {
+    return last_function_key;
+}
+
+void clear_function_key(void) {
+    last_function_key = 0;
 }
